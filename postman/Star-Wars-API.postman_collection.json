@@ -1,0 +1,283 @@
+{
+	"info": {
+		"_postman_id": "star-wars-api-collection",
+		"name": "Star Wars API",
+		"description": "REST API that integrates with SWAPI to provide search functionality for Star Wars characters and films, with built-in search analytics.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "People",
+			"item": [
+				{
+					"name": "Search People",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/people/search?name=Luke",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"people",
+								"search"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "Luke",
+									"description": "Search term (min 2 characters)"
+								}
+							]
+						},
+						"description": "Search for Star Wars characters by name. Returns a list of matching characters with their details."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Person by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/people/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"people",
+								"1"
+							]
+						},
+						"description": "Get detailed information about a specific character by their ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Search People - No Results",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/people/search?name=NonExistentCharacter",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"people",
+								"search"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "NonExistentCharacter"
+								}
+							]
+						},
+						"description": "Example of a search that returns no results."
+					},
+					"response": []
+				},
+				{
+					"name": "Search People - Validation Error",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/people/search?name=L",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"people",
+								"search"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "L",
+									"description": "Search term too short (min 2 characters required)"
+								}
+							]
+						},
+						"description": "Example of validation error - search term must be at least 2 characters."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for searching and retrieving Star Wars characters."
+		},
+		{
+			"name": "Films",
+			"item": [
+				{
+					"name": "Search Films",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/films/search?title=Hope",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"films",
+								"search"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "Hope",
+									"description": "Search term (min 2 characters)"
+								}
+							]
+						},
+						"description": "Search for Star Wars films by title. Returns a list of matching films with their details."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Film by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/films/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"films",
+								"1"
+							]
+						},
+						"description": "Get detailed information about a specific film by its ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Search Films - No Results",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/films/search?title=NonExistentFilm",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"films",
+								"search"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "NonExistentFilm"
+								}
+							]
+						},
+						"description": "Example of a search that returns no results."
+					},
+					"response": []
+				},
+				{
+					"name": "Search Films - Validation Error",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/films/search?title=A",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"films",
+								"search"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "A",
+									"description": "Search term too short (min 2 characters required)"
+								}
+							]
+						},
+						"description": "Example of validation error - search term must be at least 2 characters."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for searching and retrieving Star Wars films."
+		},
+		{
+			"name": "Statistics",
+			"item": [
+				{
+					"name": "Get Search Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/statistics",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"statistics"
+							]
+						},
+						"description": "Get search analytics including:\n- Top 5 most searched queries with percentages\n- Average API response time\n- Most popular hours for searches\n- Total number of searches\n\nStatistics are automatically recomputed every 5 minutes via a background job."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoint for retrieving search statistics and analytics."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost",
+			"type": "string"
+		}
+	]
+}
