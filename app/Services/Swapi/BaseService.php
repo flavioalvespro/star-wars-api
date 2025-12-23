@@ -19,15 +19,13 @@ abstract class BaseService
     protected string $resource;
 
     /**
-     * Cache TTL in seconds (default: 1 hour)
-     * Star Wars data is static, so we can cache for a long time
+     * Cache TTL in seconds (Time To Live)
+     * 3600 seconds = 1 hour
+     *
+     * Since Star Wars data is static (doesn't change),
+     * we can cache it for a long time
      */
     protected int $cacheTTL = 3600;
-
-    /**
-     * Cache key prefix for SWAPI data
-     */
-    protected string $cachePrefix = 'swapi';
 
     /**
      * Create a new service instance
@@ -105,38 +103,41 @@ abstract class BaseService
     }
 
     /**
-     * Cache helper - Remember data in cache or execute callback
+     * Create a unique cache key
      *
-     * This method implements the cache-aside pattern:
-     * 1. Check if data exists in cache
-     * 2. If yes, return cached data (fast!)
-     * 3. If no, execute callback to fetch data
-     * 4. Store result in cache
-     * 5. Return result
+     * Key pattern: swapi:{resource}:{type}:{value}
      *
-     * @param string $key Cache key
-     * @param callable $callback Function to execute if cache miss
-     * @param int|null $ttl Time to live in seconds (null = use default)
-     * @return mixed
+     * Examples:
+     * - makeCacheKey('id', 1) → "swapi:people:id:1"
+     * - makeCacheKey('search', 'Luke') → "swapi:people:search:luke"
+     *
+     * @param string $type Search type (id, search, etc)
+     * @param string|int $value Search value
+     * @return string Formatted cache key
      */
-    protected function cacheRemember(string $key, callable $callback, ?int $ttl = null): mixed
+    protected function makeCacheKey(string $type, string|int $value): string
     {
-        $ttl = $ttl ?? $this->cacheTTL;
+        // Convert to lowercase to ensure consistency
+        // "Luke" and "luke" will use the same cache key
+        $normalizedValue = strtolower((string) $value);
 
-        return Cache::remember($key, $ttl, $callback);
+        return "swapi:{$this->resource}:{$type}:{$normalizedValue}";
     }
 
     /**
-     * Generate a cache key for SWAPI data
+     * Retrieve data from cache or fetch using callback
      *
-     * @param string ...$parts Key parts to join
-     * @return string
+     * How it works:
+     * 1. Check if data exists in cache with the provided key
+     * 2. If YES: return cached data (fast!)
+     * 3. If NO: execute callback, store in cache, and return data
+     *
+     * @param string $key Unique key to identify in cache
+     * @param callable $callback Function to fetch data when not in cache
+     * @return mixed The data (from cache or callback)
      */
-    protected function makeCacheKey(string ...$parts): string
+    protected function getFromCacheOrFetch(string $key, callable $callback): mixed
     {
-        return implode(':', array_merge(
-            [$this->cachePrefix, $this->resource],
-            array_map('strtolower', $parts)
-        ));
+        return Cache::remember($key, $this->cacheTTL, $callback);
     }
 }

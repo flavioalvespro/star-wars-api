@@ -12,17 +12,18 @@ class FilmService extends BaseService
     /**
      * Get a film by ID
      *
-     * Uses cache to avoid repeated API calls for the same film.
-     * Star Wars films data is static, so we can cache indefinitely.
+     * CACHE: Saves to cache to avoid repeated API requests
+     * Cache key: "swapi:films:id:1" (example for ID 1)
      *
-     * @param int $id
-     * @return array|null
+     * @param int $id Film ID
+     * @return array|null Film data or null if not found
      */
     public function getFilm(int $id): ?array
     {
-        $cacheKey = $this->makeCacheKey('id', (string) $id);
+        $cacheKey = $this->makeCacheKey('id', $id);
 
-        return $this->cacheRemember($cacheKey, function () use ($id) {
+        // Retrieve from cache or fetch from API
+        return $this->getFromCacheOrFetch($cacheKey, function () use ($id) {
             return $this->getById($id);
         });
     }
@@ -30,17 +31,18 @@ class FilmService extends BaseService
     /**
      * Search films by title
      *
-     * Uses cache to avoid repeated API calls for the same search term.
-     * This dramatically improves performance for popular searches like "Hope" or "Empire".
+     * CACHE: Saves to cache to avoid repeated API requests
+     * Cache key: "swapi:films:search:hope" (example for "Hope" search)
      *
-     * @param string $title
-     * @return array|null
+     * @param string $title Title or partial title to search
+     * @return array|null List of films found or null if error
      */
     public function searchByTitle(string $title): ?array
     {
         $cacheKey = $this->makeCacheKey('search', $title);
 
-        return $this->cacheRemember($cacheKey, function () use ($title) {
+        // Retrieve from cache or fetch from API
+        return $this->getFromCacheOrFetch($cacheKey, function () use ($title) {
             return $this->get($this->resource, [
                 'title' => $title,
             ]);

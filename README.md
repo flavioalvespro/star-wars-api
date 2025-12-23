@@ -46,7 +46,7 @@ Before running this project, make sure you have installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone git@github.com:flavioalvespro/star-wars-api.git
 cd star-wars-api
 ```
 
@@ -349,23 +349,6 @@ The application uses Redis queues to process background jobs:
 
 - **Queue Worker**: Automatically started via Docker (`star-wars-queue` container)
 - **Scheduler**: Runs Laravel's task scheduler to dispatch jobs every 5 minutes
-
-#### Monitor Queue
-
-View queue logs in real-time:
-```bash
-docker logs -f star-wars-queue
-```
-
-Check failed jobs:
-```bash
-docker exec -it star-wars-api php artisan queue:failed
-```
-
-Retry failed jobs:
-```bash
-docker exec -it star-wars-api php artisan queue:retry all
-```
 
 ## Running Tests
 

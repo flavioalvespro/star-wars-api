@@ -12,17 +12,18 @@ class PeopleService extends BaseService
     /**
      * Get a person by ID
      *
-     * Uses cache to avoid repeated API calls for the same person.
-     * Star Wars characters data is static, so we can cache indefinitely.
+     * CACHE: Saves to cache to avoid repeated API requests
+     * Cache key: "swapi:people:id:1" (example for ID 1)
      *
-     * @param int $id
-     * @return array|null
+     * @param int $id Person ID
+     * @return array|null Person data or null if not found
      */
     public function getPerson(int $id): ?array
     {
-        $cacheKey = $this->makeCacheKey('id', (string)$id);
+        $cacheKey = $this->makeCacheKey('id', $id);
 
-        return $this->cacheRemember($cacheKey, function () use ($id) {
+        // Retrieve from cache or fetch from API
+        return $this->getFromCacheOrFetch($cacheKey, function () use ($id) {
             return $this->getById($id);
         });
     }
@@ -30,17 +31,18 @@ class PeopleService extends BaseService
     /**
      * Search people by name
      *
-     * Uses cache to avoid repeated API calls for the same search term.
-     * This dramatically improves performance for popular searches like "Luke" or "Vader".
+     * CACHE: Saves to cache to avoid repeated API requests
+     * Cache key: "swapi:people:search:luke" (example for "Luke" search)
      *
-     * @param string $name
-     * @return array|null
+     * @param string $name Name or partial name to search
+     * @return array|null List of people found or null if error
      */
     public function searchByName(string $name): ?array
     {
         $cacheKey = $this->makeCacheKey('search', $name);
 
-        return $this->cacheRemember($cacheKey, function () use ($name) {
+        // Retrieve from cache or fetch from API
+        return $this->getFromCacheOrFetch($cacheKey, function () use ($name) {
             return $this->get($this->resource, [
                 'name' => $name,
             ]);
