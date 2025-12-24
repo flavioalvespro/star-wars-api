@@ -1,6 +1,67 @@
-# Star Wars API
+# Star Wars Full Stack Application
 
-A Laravel-based REST API that integrates with the [SWAPI (Star Wars API)](https://swapi.tech/) to provide search functionality for Star Wars characters and films, with built-in search analytics and statistics.
+A full-stack application consisting of a Laravel REST API backend and a React frontend that integrates with the [SWAPI (Star Wars API)](https://swapi.tech/) to provide search functionality for Star Wars characters and films, with built-in search analytics and statistics.
+
+## 🚀 Quick Start
+
+You can run this project in two ways:
+
+### Option A: Full Stack (API + Frontend) - Recommended for Development
+
+```bash
+cd star-wars-api
+docker-compose -f docker-compose-dev.yml up -d
+```
+
+**What this runs:**
+- ✅ Laravel API (PHP-FPM + Nginx)
+- ✅ React Frontend (Vite dev server)
+- ✅ MySQL Database
+- ✅ Redis (Cache & Queue)
+- ✅ Queue Worker & Scheduler
+
+**Access:**
+- **Frontend**: http://localhost:5173
+- **API**: http://localhost
+
+**Stop:**
+```bash
+docker-compose -f docker-compose-dev.yml down
+```
+
+---
+
+### Option B: API Only (Backend)
+
+```bash
+cd star-wars-api
+docker-compose up -d
+```
+
+**What this runs:**
+- ✅ Laravel API (PHP-FPM + Nginx)
+- ✅ MySQL Database
+- ✅ Redis (Cache & Queue)
+- ✅ Queue Worker & Scheduler
+
+**Access:**
+- **API**: http://localhost
+
+**Stop:**
+```bash
+docker-compose down
+```
+
+---
+
+### 📋 Quick Reference
+
+| Command | What it runs | Use when |
+|---------|-------------|----------|
+| `docker-compose up -d` | API only | Backend development, API testing |
+| `docker-compose -f docker-compose-dev.yml up -d` | API + Frontend | Full-stack development |
+
+> **💡 Tip**: The difference is the `-f docker-compose-dev.yml` flag. Without it, Docker uses `docker-compose.yml` (API only) by default.
 
 ## Features
 
@@ -18,12 +79,22 @@ A Laravel-based REST API that integrates with the [SWAPI (Star Wars API)](https:
 
 ## Tech Stack
 
+### Backend (API)
 - **PHP 8.3**
 - **Laravel 12**
 - **MySQL 8.0** - Main database
 - **Redis 7** - Caching, sessions, and queue management
 - **Nginx** - Web server
+
+### Frontend
+- **React 19** - UI library
+- **Vite 7** - Build tool and dev server
+- **Axios** - HTTP client for API requests
+- **React Router DOM 7** - Client-side routing
+
+### DevOps
 - **Docker & Docker Compose** - Containerized environment
+- **Hot Module Replacement (HMR)** - Instant updates during development
 
 ## Architecture
 
@@ -43,6 +114,141 @@ Before running this project, make sure you have installed:
 
 ## Installation & Setup
 
+This project has two Docker Compose configurations:
+
+| File | Command | What it runs | Purpose |
+|------|---------|-------------|---------|
+| `docker-compose.yml` | `docker-compose up -d` | **API only** | Backend development, API testing |
+| `docker-compose-dev.yml` | `docker-compose -f docker-compose-dev.yml up -d` | **API + Frontend** | Full-stack development |
+
+Choose the setup that matches your needs:
+
+---
+
+## 🔧 Option 1: Full Stack Development (API + Frontend)
+
+This is the recommended setup for full-stack development with hot reload for both backend and frontend.
+
+### 1. Clone Both Repositories
+
+```bash
+# Clone the API
+git clone git@github.com:flavioalvespro/star-wars-api.git
+cd ..
+
+# Clone the Frontend (in the same parent directory)
+git clone git@github.com:flavioalvespro/star-wars-frontend.git
+```
+
+**Important**: Both projects must be in the same parent directory:
+```
+dev/
+├── star-wars-api/
+└── star-wars-frontend/
+```
+
+### 2. Configure Environment Variables
+
+#### API Configuration
+```bash
+cd star-wars-api
+cp .env.example .env
+```
+
+Update the `.env` file as described in the [Environment Variables](#environment-variables-reference) section.
+
+#### Frontend Configuration
+The frontend is pre-configured to connect to the API via Docker network. No additional configuration needed!
+
+### 3. Start the Full Stack
+
+From the `star-wars-api` directory:
+
+```bash
+docker-compose -f docker-compose-dev.yml up -d
+```
+
+This single command will start:
+- ✅ Laravel API (PHP-FPM + Nginx)
+- ✅ MySQL Database
+- ✅ Redis (Cache & Queue)
+- ✅ Queue Worker
+- ✅ Scheduler
+- ✅ React Frontend (Vite Dev Server)
+
+### 4. Initialize the Database
+
+```bash
+docker exec -it star-wars-api-app sh
+
+# Inside the container:
+php artisan key:generate
+composer install
+php artisan migrate
+exit
+```
+
+### 5. Access the Applications
+
+- **Frontend**: http://localhost:5173 (React app with hot reload)
+- **API**: http://localhost (Laravel API)
+- **Database**: localhost:3307 (MySQL)
+
+### 6. Development Workflow
+
+#### Frontend Development
+The frontend has **hot reload** enabled. Simply edit files in `../star-wars-frontend/src/` and see changes instantly in the browser!
+
+**Frontend Structure:**
+```
+star-wars-frontend/
+├── src/
+│   ├── components/      # Reusable React components
+│   ├── pages/          # Page components (routes)
+│   ├── services/       # API integration layer
+│   │   ├── api.js           # Axios configuration
+│   │   └── peopleService.js # People endpoint calls
+│   ├── hooks/          # Custom React hooks
+│   ├── utils/          # Utility functions
+│   ├── assets/         # Images, fonts, etc
+│   └── styles/         # Global styles
+├── Dockerfile          # Frontend container config
+└── .env                # Frontend environment variables
+```
+
+#### Backend Development
+The backend also has hot reload via volume mounting. Edit PHP files and refresh to see changes!
+
+#### Viewing Logs
+```bash
+# Frontend logs
+docker logs -f star-wars-frontend
+
+# API logs
+docker logs -f star-wars-api-nginx
+docker logs -f star-wars-api-app
+
+# Queue worker logs
+docker logs -f star-wars-api-queue
+```
+
+### 7. Stop the Stack
+
+```bash
+docker-compose -f docker-compose-dev.yml down
+```
+
+To also remove volumes (database data):
+```bash
+docker-compose -f docker-compose-dev.yml down -v
+```
+
+---
+
+## 🔨 Option 2: API Only Mode
+
+If you only want to run the API backend (without the frontend):
+
 ### 1. Clone the Repository
 
 ```bash
@@ -50,7 +256,7 @@ git clone git@github.com:flavioalvespro/star-wars-api.git
 cd star-wars-api
 ```
 
-### 2. Configure Environment Variables
+### 2. Configure Environment Variables (API Only)
 
 Copy the example environment file and configure it:
 
@@ -418,6 +624,35 @@ star-wars-api/
 
 ## Docker Services
 
+### Frontend Container (React + Vite)
+
+- **Image**: Custom Node 20 Alpine
+- **Port**: 5173
+- **Purpose**: React development server with HMR
+- **Container Name**: `star-wars-frontend`
+- **Environment**: Connects to API via Docker network (`http://api-nginx:80`)
+- **Hot Reload**: Enabled via volume mounting
+- **Access Logs**: `docker logs -f star-wars-frontend`
+
+**How Frontend Connects to API:**
+
+The frontend uses environment variables to determine the API URL:
+
+```javascript
+// In src/services/api.js
+baseURL: import.meta.env.VITE_API_URL || 'http://localhost:80'
+```
+
+When running via `docker-compose-dev.yml`:
+- **Inside Docker**: Frontend uses `http://api-nginx:80` (containers communicate via Docker network)
+- **Outside Docker**: Browser accesses `http://localhost:5173` (mapped port)
+
+This setup allows:
+- ✅ Containers to communicate internally via service names
+- ✅ Browser to access both services on localhost
+- ✅ No CORS issues
+- ✅ Hot reload for instant development feedback
+
 ### Application Container (app)
 
 - **Image**: Custom PHP 8.3-FPM Alpine
@@ -482,6 +717,16 @@ star-wars-api/
 | `SESSION_DRIVER` | Session driver | `redis` |
 | `QUEUE_CONNECTION` | Queue driver | `redis` |
 | `SWAPI_BASE_URL` | SWAPI endpoint | `https://swapi.tech/api` |
+
+## 🔗 Related Projects
+
+### Frontend Repository
+- **[Star Wars Frontend](https://github.com/flavioalvespro/star-wars-frontend)** - React application that consumes this API
+- Built with React 19, Vite, and React Router
+- Provides search interface for People and Films
+- Includes detail pages with navigation between entities
+
+> **Note**: The frontend Docker configuration is included in this repository (`docker-compose-dev.yml`) for easy full-stack development.
 
 ## License
 

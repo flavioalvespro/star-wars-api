@@ -1,0 +1,228 @@
+# ============================================================================
+# Docker Compose - Star Wars Full Stack (API + Frontend)
+# ============================================================================
+# This file orchestrates both API (Laravel) and Frontend (React) together
+#
+# Usage (run from star-wars-api directory):
+#   docker-compose -f docker-compose-dev.yml up -d
+#   docker-compose -f docker-compose-dev.yml down
+#
+# Access:
+#   Frontend: http://localhost:5173
+#   API:      http://localhost:80
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # BACKEND SERVICES (Laravel API)
+  # ==========================================================================
+
+  # Laravel Application (PHP-FPM)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: star-wars-api-dev-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./docker/php/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini
+    environment:
+      - TZ=America/Sao_Paulo
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-star_wars_api}
+      - DB_USERNAME=${DB_USERNAME:-laravel}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - star-wars-network
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: star-wars-api-dev-nginx
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-80}:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/default.conf:/etc/nginx/http.d/default.conf
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - star-wars-network
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: star-wars-mysql
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    environment:
+      - TZ=America/Sao_Paulo
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-rootsecret}
+      - MYSQL_DATABASE=${DB_DATABASE:-star_wars_api}
+      - MYSQL_USER=${DB_USERNAME:-laravel}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-secret}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - star-wars-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (Cache & Queue)
+  redis:
+    image: redis:7-alpine
+    container_name: star-wars-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - star-wars-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Queue Worker (Laravel)
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: star-wars-api-dev-queue
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    environment:
+      - TZ=America/Sao_Paulo
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-star_wars_api}
+      - DB_USERNAME=${DB_USERNAME:-laravel}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-null}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: php artisan queue:work --sleep=1 --tries=3 --timeout=90
+    networks:
+      - star-wars-network
+
+  # Scheduler (Laravel Cron)
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: star-wars-api-dev-scheduler
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    environment:
+      - TZ=America/Sao_Paulo
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-star_wars_api}
+      - DB_USERNAME=${DB_USERNAME:-laravel}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - star-wars-network
+
+  # ==========================================================================
+  # FRONTEND SERVICE (React + Vite)
+  # ==========================================================================
+
+  frontend:
+    build:
+      context: ../star-wars-frontend
+      dockerfile: Dockerfile
+    container_name: star-wars-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ../star-wars-frontend:/app
+      - /app/node_modules  # Don't override node_modules from container
+    environment:
+      # Frontend connects to API via localhost (browser can't resolve "nginx")
+      - VITE_API_URL=http://localhost
+    depends_on:
+      - nginx
+    networks:
+      - star-wars-network
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+networks:
+  star-wars-network:
+    driver: bridge
+    name: star-wars-network
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
+  nginx-logs:
+    driver: local
